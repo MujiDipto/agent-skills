@@ -49,7 +49,24 @@ Before reaching for controls, spend five minutes thinking like an attacker:
 - [ ] Every resource access checks ownership/role (prevents IDOR)
 - [ ] Admin endpoints require admin role verification
 - [ ] API keys scoped to minimum necessary permissions
-- [ ] JWT tokens validated (signature, expiration, issuer)
+- [ ] JWT tokens validated (signature, expiration, issuer, audience, algorithm allowlist) wherever they are trusted, including ID tokens at sign-in; no token is only decoded
+- [ ] Debug or impersonation shortcuts off by default and refused unless the environment is explicitly development or test
+- [ ] Unknown identities refused, not auto-provisioned (unless provisioning comes from a tenant-controlled identity provider, scoped to that tenant)
+
+## Multi-Tenant Data
+
+- [ ] Tenant comes from the authenticated principal, or from the request only after checking the principal's membership
+- [ ] Every read and write on tenant data scoped by tenant, including counts, joins, exports, and jobs
+- [ ] Another tenant's resource answers 404, not 403
+- [ ] Foreign keys on tenant data include a `NOT NULL` tenant id and reference a unique `(id, tenant_id)` on the parent, so the data layer refuses cross-tenant rows
+- [ ] Each tenant-data endpoint has a test where a second tenant requests the first tenant's record
+
+## Audit Trail
+
+- [ ] Writes to sensitive records and their audit rows commit in one transaction (or through a transactional outbox when the audit store is separate)
+- [ ] Read audits are mandatory or best-effort by explicit decision; a failed best-effort audit write is logged, not swallowed
+- [ ] List reads record which record ids were shown
+- [ ] Audit metadata holds ids and enumerated values only
 
 ## Input Validation
 
@@ -200,6 +217,9 @@ For any feature that calls an LLM (chatbots, summarizers, agents, RAG):
 - [ ] Token, rate, and recursion/loop limits set (bound consumption)
 
 ## Error Handling
+
+- [ ] Error logs record the error's type, code, and stack frames, never `err` or `err.message` from a catch-all handler (parser and driver messages quote input and row values)
+- [ ] Malformed request bodies are rejected with `400` at the boundary instead of reaching the catch-all
 
 ```typescript
 // Production: generic error, no internals

@@ -71,6 +71,7 @@ If you can't name the trust boundaries for a feature, you're not ready to secure
 - **Never use `eval()` or `innerHTML`** with user-provided data
 - **Never store sessions in client-accessible storage** (localStorage for auth tokens)
 - **Never expose stack traces** or internal error details to users
+- **Never log raw error messages or whole error objects** from parsers, database drivers, or validators: their messages quote the input and the row values. Log the error's type, code, and stack frames instead (pattern: `observability-and-instrumentation`)
 
 ## Hardening Controls
 
@@ -84,10 +85,24 @@ The rules below are the workflow; a concrete implementation of each lives in [re
 
 Patterns: [Injection](references/hardening-patterns.md#injection), [XSS](references/hardening-patterns.md#cross-site-scripting-xss), [Access control](references/hardening-patterns.md#broken-access-control).
 
+### Multi-tenant data
+
+When one deployment serves several customers (organizations, workspaces, accounts), a missed filter leaks one customer's data to another. Treat tenancy as its own control, separate from authentication:
+
+- **Derive the tenant from the authenticated principal.** A tenant id in a path, query, or body (a workspace switcher, `/orgs/:id`) is a claim to check against the principal's memberships, never a scope to apply directly.
+- **Scope every read and write**, including counts, joins, subqueries, exports, and background jobs.
+- **Answer another tenant's resource with 404, not 403**, the same response as a nonexistent id, so its existence is not disclosed.
+- **Make the data layer refuse cross-tenant rows.** Child rows carry a `NOT NULL` tenant id, the parent has a unique constraint on `(id, tenant_id)`, and the child's foreign key references it as `(parent_id, tenant_id)`, so a buggy query cannot link records across tenants. Where the database supports it, row-level security adds a second layer that does not depend on every query remembering the filter.
+- **Test it from the other side.** Every endpoint that touches tenant data gets a test where a user from a second tenant asks for the first tenant's record.
+
 ### Authentication and sessions
 
 - Hash passwords with bcrypt (≥12 rounds), scrypt, or argon2. The session secret comes from the environment, never from code.
 - Session cookies are `httpOnly`, `secure`, and `sameSite: 'lax'` or `'strict'` (the CSRF defense; `'none'` sends the cookie on cross-site requests), with a bounded `maxAge`.
+- **Decoding a token is not verifying it.** Verify every token where it is trusted (bearer tokens on each request, and ID tokens at sign-in): signature against the issuer's keys (its published key set, or the shared secret for HMAC), issuer, audience, expiry, and an algorithm allowlist. When accounts are matched on a claim such as email, accept only a value the issuer marks as verified.
+- **A failure to fetch the issuer's keys is an outage, not a bad token.** Cache keys; if they cannot be fetched (network error or 5xx), return 503 and alert rather than 401, which can sign users out and hides the incident. A token whose key id is absent from a freshly fetched key set is still a 401.
+- **Debug and impersonation shortcuts are off by default** and refuse to start unless the environment is explicitly a development or test one. Never infer "not production" from a default value.
+- **Unknown identities are refused, not auto-created,** unless the identity provider is one the tenant controls and provisioning is scoped to that tenant (SSO with a verified domain, SCIM). Otherwise provisioning on first sign-in grants access to whoever the provider will vouch for; use invites or an explicit allowlist.
 
 Pattern: [Authentication](references/hardening-patterns.md#broken-authentication).
 
@@ -147,6 +162,7 @@ Hardening asks "can an attacker read it?" Privacy asks "should *we* hold it at a
 - **Collect only against a stated purpose.** "Might be useful later" is latent breach scope, not a purpose. Keep PII out of telemetry (the `observability-and-instrumentation` skill makes the same point from the ops side).
 - **Set retention up front, then actually delete.** Every personal-data store needs a TTL and a working deletion path, including backups, caches, search indexes, and analytics copies.
 - **Support the data-subject rights your jurisdiction requires** (GDPR, CCPA, and kin): export, correct, delete. Design the schema so a user's data is findable and erasable, not smeared irreversibly across systems.
+- **Audit access to sensitive records, atomically.** A write and its audit record commit in the same transaction (or, if the audit store is separate, through a transactional outbox), so no change exists without a record of who made it. Decide per regulation whether read audits are mandatory (the read fails if the audit fails) or best-effort (the failure is logged, never swallowed). Record which records a list exposed (by id), not just how many. Audit metadata holds ids and enumerated values, never the sensitive fields themselves.
 - **Consent gates collection and third-party sharing, and is auditable.** Sending PII to an analytics, ad, or LLM vendor is sharing; the vendor needs a data-processing agreement. Make region a configurable policy, not a hardcoded assumption.
 
 Classification table: [Data classification](references/hardening-patterns.md#data-classification). A privacy incident starts the breach-notification clock; run the postmortem with the `debugging-and-error-recovery` skill.
@@ -190,6 +206,10 @@ Before sign-off, walk `../../references/security-checklist.md`: it covers authen
 - Missing CORS configuration or wildcard (`*`) origins
 - No rate limiting on authentication endpoints, or an in-memory limiter in front of more than one instance
 - Stack traces or internal errors exposed to users
+- A catch-all error handler that logs `err` or `err.message`, or a request body parsed without handling malformed input
+- A token decoded (base64 and JSON) but never verified, anywhere in the codebase
+- A query on tenant data whose tenant filter comes from the request, or is missing
+- A sensitive write whose audit record is written after the transaction commits, or inside a `try` that swallows the failure
 - Dependencies with known critical vulnerabilities, competing lockfiles at one installation boundary, non-reproducible installs, or blanket-approved scripts
 - Server fetches user-supplied URLs without an allowlist (SSRF)
 - LLM/model output passed into a query, the DOM, a shell, or `eval`
@@ -208,7 +228,10 @@ After implementing security-relevant code:
 - [ ] Destructive filesystem operations resolve symlinks, then verify allowlisted root, minimum depth, and ownership before running
 - [ ] Authentication and authorization checked on every protected endpoint
 - [ ] Security headers present in response (check with browser DevTools)
-- [ ] Error responses don't expose internal details
+- [ ] Error responses don't expose internal details, and error logs record type and code, not messages that can quote input
+- [ ] Every token is verified (signature, issuer, audience, expiry) where it is trusted, including at sign-in
+- [ ] Tenant data is scoped by the authenticated principal, cross-tenant access returns 404, and a test proves it
+- [ ] Sensitive writes and their audit records commit in one transaction
 - [ ] Rate limiting active on auth endpoints, backed by a shared store when more than one instance serves traffic
 - [ ] Server-side URL fetches validated against an allowlist (no SSRF)
 - [ ] LLM/model output validated and encoded before use (if AI features present)
