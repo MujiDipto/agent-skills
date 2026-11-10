@@ -1,5 +1,7 @@
 # Agent Skills
 
+> **Fork note:** this is a hardened fork of [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) with added guidance on sensitive-data logging, audit trails, tenant isolation, token verification, calendar dates, tests that can fail, and defect-to-rule guardrails. See [FORK.md](FORK.md) for what changed and why.
+
 **Production-grade engineering skills for AI coding agents.**
 
 Skills encode the workflows, quality gates, and best practices that senior engineers use when building software. These ones are packaged so AI agents follow them consistently across every phase of development.
