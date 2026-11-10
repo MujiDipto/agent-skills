@@ -196,6 +196,8 @@ verify nothing is broken."
 
 Be explicit about what's in scope and what's NOT in scope for each increment.
 
+**Match the human gate to the risk of the increment.** Low-risk work (UI wiring, copy, internal refactors behind tests) can run several increments after one approved plan, for example with `/build auto`. High-risk increments (authentication, authorization, tenant isolation, schema or data migrations, payments, deletion) run one at a time, each shown and approved before the next starts, and each reviewed by a fresh-context reviewer (`doubt-driven-development`). Decide the tier per task when the plan is approved, not mid-run.
+
 ## Increment Checklist
 
 After each increment, verify with the repository's own commands (see the test-driven-development skill's Discover the Stack First section):

@@ -167,6 +167,8 @@ REFRAMED SUCCESS CRITERIA:
 
 This lets you loop, retry, and problem-solve toward a clear goal rather than guessing what "faster" means.
 
+**Readiness review before asking for approval.** Give the saved spec, and nothing else, to a reader with fresh context (a subagent, or a teammate who has not seen the conversation; `doubt-driven-development` describes how to brief one) and ask: "What would you still need answered to build this without asking anyone?" Each answer either goes into the spec or into Open Questions. A spec that only makes sense alongside the conversation that produced it is not finished.
+
 **Stop after writing the spec (CRITICAL).** Once the spec is saved:
 
 1. Summarize it and list any Open Questions.

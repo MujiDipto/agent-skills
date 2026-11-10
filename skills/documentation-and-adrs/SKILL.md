@@ -296,3 +296,4 @@ After documenting:
 - [ ] No commented-out code remains
 - [ ] Rules files (CLAUDE.md etc.) are current and accurate
 - [ ] Prose edits preserve source details, decision trade-offs, and qualifiers without adding unsupported guarantees
+- [ ] Every factual claim (counts, file paths, behaviors, test and tool results) has been checked against the code and history; for reports and write-ups others will rely on, an independent fact-check pass has compared each claim with its source
