@@ -141,6 +141,18 @@ export async function completeTask(id: string): Promise<Task> {
 // Step 3: Test passes → bug fixed, regression guarded
 ```
 
+## Prove the Test Can Fail
+
+A test that passes is only evidence if it could have failed. Three habits catch the tests that cannot:
+
+1. **Run it before the fix, and read why it fails.** If a reproduction test passes against the broken code, it does not reproduce the bug (a classic case: an injection test whose payload the vulnerable query happens to tolerate). Change the test until it fails for the reason you claim.
+2. **Mutate the guard.** For tests that protect a security, tenancy, or concurrency rule, temporarily delete or invert the line they guard (the tenant filter, the row lock, the signature check), run the test, confirm it goes red, then restore the line. A guard test that stays green with its guard removed is guarding nothing.
+3. **Make the condition deterministic.** Do not rely on timing to produce the case under test:
+   - **Concurrency:** when the guard is a database lock, take it yourself on a second connection, start the request, wait until it is observably blocked (for example, poll the database's lock-wait view), then release. Requests fired concurrently (for example with `Promise.all`) often still execute one after another, so the interleaving under test may never happen.
+   - **Time and time zones:** choose a clock or zone where the wrong answer differs from the right one *now* (a zone whose calendar date differs from the server's), instead of hoping the test runs at the right hour.
+
+Record which guards you mutated in the change summary; it is the strongest evidence a reviewer can check.
+
 ## The Test Pyramid
 
 Invest testing effort according to the pyramid — most tests should be small and fast, with progressively fewer tests at higher levels:
@@ -306,6 +318,8 @@ describe('TaskService', () => {
 |---|---|---|
 | Testing implementation details | Tests break when refactoring even if behavior is unchanged | Test inputs and outputs, not internal structure |
 | Flaky tests (timing, order-dependent) | Erode trust in the test suite | Use deterministic assertions, isolate test state |
+| A test that passes before the fix | Proves nothing about the fix; often the input does not trigger the bug | Run it red first and confirm the failure reason ([Prove the Test Can Fail](#prove-the-test-can-fail)) |
+| A race test built on `sleep` or simultaneous requests | Can pass whether or not the lock exists | Hold the lock yourself and wait for the blocked state |
 | Testing framework code | Wastes time testing third-party behavior | Only test YOUR code |
 | Snapshot abuse | Large snapshots nobody reviews, break on any change | Use snapshots sparingly and review every change |
 | No test isolation | Tests pass individually but fail together | Each test sets up and tears down its own state |
