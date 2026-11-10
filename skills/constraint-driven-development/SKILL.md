@@ -238,6 +238,18 @@ The alternative asks for no decision: record where you are, then refuse to get w
 
 This also answers a fair objection to training. Models are rewarded for passing tests, which you can evaluate in seconds. Architectural rot shows up over months and never reaches the weights. A ratchet is the missing penalty, written down where the build can see it.
 
+### Step 8: Turn each defect class into a rule
+
+A test proves one bug is fixed. A rule stops the same kind of bug coming back anywhere, written by anyone, including the next agent. After setup, whenever review, an incident, or an audit finds a defect that is a recognizable code shape (an unscoped query, request input in SQL text, a request body or whole error passed to the logger, a token decoded but not verified), encode it:
+
+1. **Write the rule in the project's static-analysis tool** (Semgrep, a custom ESLint rule, a linter plugin), in a project rules file that a human owns.
+2. **Give the rule its own test cases:** code it must flag and code it must not, run by the tool's test mode in CI. A rule that silently stops matching after a refactor should fail the build like a broken test. Include the call shapes this codebase actually uses; a rule tested only on the simplest form misses the real ones.
+3. **Prove it against history** (the Step 4 violation/control check, with the real defect as the violation): run the rule on the commit where the defect existed and confirm it fires; run it on the fixed code and confirm it is clean.
+4. **Wire it into the fast stage if it fits the budget, otherwise `check:task`,** and add it to `CONSTRAINTS.md` as an enforced, project-owned check.
+5. **Suppressions carry a reason** on the same line and are recorded in the Exceptions table (Step 3); Step 6 treats an unrecorded one as a silenced checker.
+
+Know where rules stop: a rule can see that a query mentions the tenant column, not that it filters by the *right* tenant. Rules complement the tests; they do not replace them.
+
 ## Sane Defaults
 
 When the user has no opinion, use these. They're chosen to be met by most codebases on day one.
@@ -298,6 +310,7 @@ Stop and reconsider if you notice:
 
 The skill was applied correctly when:
 
+- [ ] Each defect class found since setup is either a project rule with its own test cases, or recorded as not expressible as a rule
 - [ ] `CONSTRAINTS.md` exists, and every number in it has a stated reason
 - [ ] The floor is enforced and passes on the current codebase without changes
 - [ ] Every dimension the user picked has a tool installed and a command that runs today

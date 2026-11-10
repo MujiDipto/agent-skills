@@ -53,6 +53,8 @@ Pull Request Opened
 
 **No gate can be skipped.** If lint fails, fix lint — don't disable the rule. If a test fails, fix the code — don't skip the test.
 
+**CI runs exactly what developers run.** Give the repository one aggregate check command (for example `npm run check`: format check, lint, typecheck, tests, build) and make CI call the same steps. Include the formatter in check mode; a format gate that only exists locally drifts until it is red everywhere. Never mark a quality step `continue-on-error`, and treat lint warnings that signal real defects (unused variables, unhandled promises) as errors. A gate that is red on the main branch is fixed the same day; if it truly cannot be, record it as an exception with an owner and an expiry (`constraint-driven-development`).
+
 ## GitHub Actions Configuration
 
 ### Basic CI Pipeline

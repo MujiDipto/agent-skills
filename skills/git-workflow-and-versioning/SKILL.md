@@ -62,6 +62,8 @@ git log --oneline
 x1y2z3a Add task feature, fix sidebar, update deps, refactor utils
 ```
 
+**Every commit builds and passes on its own.** Run the typecheck and tests before each commit, not only at the end of the branch. A commit that only compiles once the next one lands breaks `git bisect`, reverts, and cherry-picks. Fix it in place before pushing rather than adding a follow-up "fix types" commit.
+
 ### 3. Descriptive Messages
 
 Commit messages explain the *why*, not just the *what*:
