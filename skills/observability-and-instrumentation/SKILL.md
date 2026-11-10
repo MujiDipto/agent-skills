@@ -105,6 +105,25 @@ Both fields have to cross the same boundaries as the correlation ID — queue me
 
 **Never log secrets, tokens, passwords, or full PII.** This is a hard rule from the `security-and-hardening` skill — telemetry pipelines are a classic data-leak path. Allowlist fields; don't log whole request bodies.
 
+**Log errors by type, not by message.** This follows from the `security-and-hardening` rule on error logging. An error's message is written by whatever threw it, and parsers, database drivers, and validators quote their input: a JSON parse error repeats part of the body, a constraint violation repeats the row. Logging `err` or `err.message` from a catch-all handler therefore logs request data. Log the error's name, code, and stack frames:
+
+```typescript
+// BAD: the message can contain the request body or a database row
+logger.error({ err }, 'unhandled error');
+
+// GOOD: enough to find the defect, without the message text
+const e = err instanceof Error ? err : new Error('non-Error thrown');
+const header = `${e.name}: ${e.message}`;
+// Drop the header first: a multi-line message could otherwise pass the frame filter.
+const frames = e.stack?.startsWith(header)
+  ? e.stack.slice(header.length).split('\n').filter((l) => /^\s+at .*:\d+:\d+\)?$/.test(l))
+  : [];
+const errorCode = (e as { code?: unknown }).code;
+logger.error({ event: 'unhandled_error', errorName: e.name, errorCode, frames }, 'unhandled error');
+```
+
+Reject malformed bodies at the boundary (see `api-and-interface-design`, Validate at Boundaries) so they never reach the catch-all.
+
 ### 4. Metrics
 
 For request-driven services, instrument **RED** on every endpoint and every external dependency: **R**ate (requests/sec), **E**rrors (failure rate), **D**uration (latency histogram, not average). For resources (queues, pools, hosts), use **USE**: **U**tilization, **S**aturation, **E**rrors.

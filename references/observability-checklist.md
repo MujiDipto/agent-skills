@@ -30,6 +30,7 @@ Telemetry without a question is noise. Before instrumenting anything:
 - [ ] Log levels are consistent: `error` = invariant broken, someone may act; `warn` = degraded but handled; `info` = significant business event; `debug` = off in production
 - [ ] No secrets, tokens, passwords, or unredacted PII in any log line (hard rule from `security-and-hardening`)
 - [ ] Fields are allowlisted — no whole request/response bodies, no auth headers
+- [ ] Errors are logged by name, code, and stack frames; never the whole error object or its message from a generic handler
 - [ ] External service calls logged with metadata only: endpoint, status, latency, attempt count, sanitized identifiers
 - [ ] Actual log output spot-checked: structured fields, not `[object Object]`
 

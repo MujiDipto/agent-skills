@@ -109,6 +109,8 @@ app.post('/api/tasks', async (req, res) => {
 });
 ```
 
+Body-parse failures belong to the boundary too: whether parsing happens in the handler or in middleware, turn malformed input into a `400` explicitly (distinct from the `422` for a well-formed but invalid body), so it never reaches a generic error handler.
+
 Where validation belongs:
 - API route handlers (user input)
 - Form submission handlers (user input)
@@ -215,6 +217,16 @@ Never let the second caller through because the first "seems stuck". A stalled a
 **Every call has three outcomes, not two: success, failure, and _unknown_.** A timeout tells you nothing about whether the effect applied. Record the intent *before* calling out, so a crash between the call and the response leaves evidence something must resolve later — rather than a silently retried charge.
 
 **Set retention from the longest retry chain**, not from disk cost. Keys must outlive every path that can re-deliver the same intent, including a dead-letter queue replayed a week later and any provider dispute window. A 24-hour key TTL behind a 7-day DLQ is a duplicate waiting to happen.
+
+### 7. Calendar Dates Belong to the User's Time Zone
+
+"Due today", "overdue", "this month's invoices", and "expires on" are calendar questions, and the calendar is the customer's, not the server's. For part of every day the two calendars name different dates.
+
+- **Store calendar dates as dates**, not timestamps at midnight, serialize them as `YYYY-MM-DD`, and keep them as plain dates on clients too (not a `Date` at midnight, which some runtimes parse as UTC and shift).
+- **Store the zone that defines "today"** on the account, tenant, or location, and compute "today" in that zone, in the database where possible (PostgreSQL: `(now() AT TIME ZONE tz)::date`, not `current_date`, which uses the session zone).
+- **Test with a zone whose date differs from the server's right now** (technique: `test-driven-development`, Prove the Test Can Fail).
+
+Adding the zone is one column at design time and a data migration later.
 
 ## REST API Patterns
 
