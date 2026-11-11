@@ -29,6 +29,15 @@ I ran the same take-home task (a feature on an inherited multi-tenant web app ha
 - Logging errors by type rather than message, and promoting defect-signalling lint warnings to errors: from the mattpocock/skills run, the only one whose error handler did not leak.
 - Spec readiness review by a fresh reader, and evidence before claims: adapted from obra/superpowers (`brainstorming`, `verification-before-completion`).
 
+## Installing
+
+```bash
+claude plugin marketplace add MujiDipto/agent-skills
+claude plugin install agent-skills@addy-agent-skills
+```
+
+The marketplace declares the plugin source as `./`, so it installs from whichever repository was added, this fork included. Upstream's manifest names `addyosmani/agent-skills` directly, so keep the fork's line if a sync conflicts there.
+
 ## Staying in sync
 
 `upstream` points at addyosmani/agent-skills. To update: `git fetch upstream && git merge upstream/main`. The changes above are edits to existing skills, so conflicts, if any, are confined to the files listed above and the fork note at the top of `README.md`.
