@@ -23,6 +23,7 @@ I ran the same take-home task (a feature on an inherited multi-tenant web app ha
 | One human-gate level for every task | Gate by risk: low-risk increments may run in batches, high-risk ones one at a time with approval and fresh-context review | `incremental-implementation` |
 | Claims of "done" or "passing" without the run that showed it | Report the command and its real output (adapted from superpowers' verification-before-completion) | `using-agent-skills` |
 | Write-ups that overstated what the code did | Fact-check every claim against the code and history | `documentation-and-adrs` |
+| One model for every stage | Claude Code only: `/plan` runs on the latest Fable (`model: fable`); every other command and persona on the latest Opus (`model: opus`). Free-form turns outside a command use the session's model | `.claude/commands/*.md`, `agents/*.md` |
 
 ## Credit
 

@@ -1,6 +1,7 @@
 ---
 description: Run TDD workflow — write failing tests, implement, verify. For bugs, use the Prove-It pattern.
 disable-model-invocation: true
+model: opus
 ---
 
 Invoke the agent-skills:test-driven-development skill.

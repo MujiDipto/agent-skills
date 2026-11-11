@@ -1,6 +1,7 @@
 ---
 description: Define and enforce this project's quality bar — interview, sane defaults, CONSTRAINTS.md
 disable-model-invocation: true
+model: opus
 ---
 
 Invoke the agent-skills:constraint-driven-development skill.

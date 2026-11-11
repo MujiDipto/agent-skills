@@ -1,6 +1,7 @@
 ---
 description: Conduct a five-axis code review — correctness, readability, architecture, security, performance
 disable-model-invocation: true
+model: opus
 ---
 
 Invoke the agent-skills:code-review-and-quality skill.

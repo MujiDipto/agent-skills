@@ -1,6 +1,7 @@
 ---
 description: Run a web performance audit via the web-performance-auditor persona
 disable-model-invocation: true
+model: opus
 ---
 
 `/webperf` targets web applications specifically. Do not use it for utility libraries, CLIs, or server-only code with no browser-facing output.

@@ -1,6 +1,7 @@
 ---
 description: Simplify code for clarity and maintainability — reduce complexity without changing behavior
 disable-model-invocation: true
+model: opus
 ---
 
 Invoke the agent-skills:code-simplification skill.
